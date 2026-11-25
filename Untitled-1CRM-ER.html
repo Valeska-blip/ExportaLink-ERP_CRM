@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#193B69">
+  <title>ExportaLink | Plataforma Enterprise CRM + ERP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak]{display:none!important}
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{background:#EEF3F9;color:#1C2B42}
+    .sidebar-link{transition:all .18s ease;color:#71829B}
+    .sidebar-link.active{background:#E2ECF8;color:#193B69;font-weight:650}
+    .sidebar-link:hover:not(.active){background:#E8F0F8;color:#193B69}
+    .field{width:100%;border:1px solid #DCE5EF;border-radius:10px;padding:9px 12px;background:#fff;outline:none;transition:.18s;font-size:13px;color:#1C2B42}
+    .field:focus{border-color:#268CC5;box-shadow:0 0 0 3px rgba(38,140,197,.15)}
+    .field-label{display:block;font-size:11px;font-weight:700;color:#71829B;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+    .btn-primary{background:#268CC5;color:white;border-radius:10px;padding:9px 15px;font-size:13px;font-weight:650;transition:.18s}
+    .btn-primary:hover{background:#1f73a4;transform:translateY(-1px)}
+    .btn-success{background:#16866C;color:white;border-radius:10px;padding:9px 15px;font-size:13px;font-weight:650;transition:.18s}
+    .btn-success:hover{background:#126c56}
+    .btn-secondary{background:#fff;border:1px solid #DCE5EF;color:#1C2B42;border-radius:10px;padding:8px 13px;font-size:13px;font-weight:600}
+    .btn-secondary:hover{background:#F7F9FC}
+    .soft-shadow{box-shadow:0 4px 20px rgba(28,43,66,.06)}
+    .modal-backdrop{background:rgba(28,43,66,.55);backdrop-filter:blur(4px)}
+    .table-row:hover{background:#F7F9FC}
+    .kanban-col{min-height:380px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:16px;padding:12px}
+    .kanban-card{cursor:grab;transition:all .2s ease}
+    .kanban-card:active{cursor:grabbing;transform:scale(0.98)}
+  </style>
+</head>
+<body class="antialiased" x-data="exportaApp()" x-init="init()" @keydown.escape.window="closeModals()">
+  <div class="min-h-screen flex flex-col">
+    
+    <!-- Barra Superior -->
+    <header class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#DCE5EF] bg-[#193B69] px-4 lg:px-8 text-xs font-medium text-white shadow-md">
+      <div class="flex items-center gap-4">
+        <button @click="mobileMenu=!mobileMenu" class="rounded-lg p-1.5 hover:bg-white/10 lg:hidden text-white">☰</button>
+        <div class="flex items-center gap-2 cursor-pointer" @click="navigate('dashboard')">
+          <span class="font-extrabold tracking-tight text-sm text-white">Exporta<span class="text-[#268CC5]">Link</span></span>
+          <span class="rounded bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white tracking-widest">ENTERPRISE</span>
+        </div>
+        <span class="hidden md:inline-block h-4 w-px bg-white/20"></span>
+        <span class="hidden md:inline-block text-slate-200 text-[11px]">TC: $1.00 USD = €0.92 EUR | Incoterms: EXW, FOB, CIF, DDP</span>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="relative hidden sm:block">
+          <input class="bg-white/10 border border-white/20 text-white placeholder-slate-300 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:bg-white/20" placeholder="🔍 Buscador global..." x-model="globalSearch">
+        </div>
+        <span class="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 font-semibold text-emerald-200 text-[11px]">● Sync LocalStorage</span>
+        <button @click="exportCSV()" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition">Exportar CSV</button>
+      </div>
+    </header>
+
+    <div class="flex flex-1">
+      <!-- Menú Lateral -->
+      <aside class="sidebar fixed inset-y-0 left-0 z-30 mt-14 flex w-64 flex-col bg-[#F7F9FC] border-r border-[#DCE5EF] lg:static lg:mt-0 lg:translate-x-0 overflow-y-auto" :class="mobileMenu?'translate-x-0':' -translate-x-full lg:translate-x-0'">
+        <div class="p-5 border-b border-[#DCE5EF] hidden lg:block">
+          <div class="text-xs font-extrabold tracking-widest text-[#71829B]">ESPACIO DE TRABAJO</div>
+          <div class="text-sm font-bold text-[#1C2B42] mt-0.5">Comercio sin fronteras</div>
+        </div>
+
+        <div class="px-4 py-4 space-y-6">
+          <div>
+            <p class="px-3 mb-2 text-[10px] font-bold tracking-wider text-[#71829B]">GENERAL</p>
+            <nav class="space-y-1">
+              <button @click="navigate('dashboard')" class="sidebar-link flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='dashboard'?'active':''">📊 Dashboard Ejecutivo</button>
+            </nav>
+          </div>
+
+          <div>
+            <p class="px-3 mb-2 text-[10px] font-bold tracking-wider text-[#268CC5]">MÓDULO CRM</p>
+            <nav class="space-y-1">
+              <button @click="navigate('buyers')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='buyers'?'active':''"><span>🌐 Compradores</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="buyers.length"></span></button>
+              <button @click="navigate('catalog')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='catalog'?'active':''"><span>📦 Catálogo (12 Prod)</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="catalog.length"></span></button>
+              <button @click="navigate('quotes')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='quotes'?'active':''"><span>📄 Cotizaciones & Incoterms</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="quotes.length"></span></button>
+              <button @click="navigate('negotiations')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='negotiations'?'active':''"><span>🤝 Pipeline Kanban</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="negotiations.length"></span></button>
+              <button @click="navigate('commercial_tracking')" class="sidebar-link flex w-full items-center rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='commercial_tracking'?'active':''">📈 Centro de Comunicaciones</button>
+            </nav>
+          </div>
+
+          <div>
+            <p class="px-3 mb-2 text-[10px] font-bold tracking-wider text-[#16866C]">MÓDULO ERP</p>
+            <nav class="space-y-1">
+              <button @click="navigate('producers')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='producers'?'active':''"><span>🌾 Proveedores / Productores</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="producers.length"></span></button>
+              <button @click="navigate('inventory')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='inventory'?'active':''"><span>📊 Stock & Alertas MOQ</span><span x-show="lowStockCount>0" class="bg-red-500 text-white font-bold px-2 py-0.5 rounded-full text-[9px]" x-text="lowStockCount"></span></button>
+              <button @click="navigate('orders')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='orders'?'active':''"><span>🛒 Gestión de Pedidos</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="orders.length"></span></button>
+              <button @click="navigate('lots')" class="sidebar-link flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='lots'?'active':''"><span>🏷️ Lotes SHA-256</span><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]" x-text="lots.length"></span></button>
+              <button @click="navigate('documentation')" class="sidebar-link flex w-full items-center rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='documentation'?'active':''">📑 Documentación Integrada</button>
+              <button @click="navigate('costs')" class="sidebar-link flex w-full items-center rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='costs'?'active':''">💰 Simulador de Costos</button>
+              <button @click="navigate('services')" class="sidebar-link flex w-full items-center rounded-xl px-3 py-2.5 text-left text-xs" :class="page==='services'?'active':''">🚚 Red Logística</button>
+            </nav>
+          </div>
+        </div>
+
+        <div class="mt-auto p-4 border-t border-[#DCE5EF]">
+          <button @click="resetDemo()" class="w-full btn-secondary text-xs text-red-600 border-red-200 hover:bg-red-50">Restaurar Datos Demo</button>
+        </div>
+      </aside>
+
+      <!-- Área de Trabajo Principal -->
+      <main class="flex-1 p-6 lg:p-10 max-w-[1500px] overflow-x-auto">
+        
+        <!-- Migas de Pan (Breadcrumbs UX/UI) -->
+        <nav class="flex items-center text-xs text-[#71829B] mb-4 space-x-2">
+          <span class="hover:underline cursor-pointer" @click="navigate('dashboard')">Inicio</span>
+          <span>/</span>
+          <span class="font-bold text-[#1C2B42] capitalize" x-text="page.replace('_', ' ')"></span>
+        </nav>
+
+        <!-- Toast / Notificaciones -->
+        <div x-show="toast.show" x-transition class="fixed bottom-6 right-6 z-50 bg-[#1C2B42] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs">
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+          <span x-text="toast.message"></span>
+        </div>
+
+        <!-- 1. DASHBOARD EJECUTIVO (8 Tarjetas + Gráficos Estadísticos + Alertas) -->
+        <section x-show="page==='dashboard'" x-transition.opacity>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-extrabold text-[#1C2B42]">Panel de Control Ejecutivo</h2>
+              <p class="text-xs text-[#71829B] mt-1">Monitoreo integral CRM + ERP, gráficos estadísticos y alertas operativas.</p>
+            </div>
+            <div class="flex gap-2">
+              <button @click="openModal('quote')" class="btn-primary">＋ Nueva Cotización</button>
+              <button @click="openModal('order')" class="btn-success">＋ Registrar Pedido</button>
+            </div>
+          </div>
+
+          <!-- A. 8 Tarjetas de Indicadores Principales -->
+          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+            <div @click="navigate('buyers')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-[#268CC5] transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Compradores CRM</span><span>🌐</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-[#268CC5]" x-text="buyers.length"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Total activos y prospectos</p>
+            </div>
+
+            <div @click="navigate('producers')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-[#16866C] transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Productores ERP</span><span>🌾</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-[#16866C]" x-text="producers.length"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Proveedores locales verificados</p>
+            </div>
+
+            <div @click="navigate('catalog')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-[#268CC5] transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Productos en Catálogo</span><span>📦</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-teal-700" x-text="catalog.length"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Ítems exportables (12 base)</p>
+            </div>
+
+            <div @click="navigate('quotes')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-[#268CC5] transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Cotizaciones Pendientes</span><span>📄</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-amber-600" x-text="quotes.filter(q=>q.status!=='Aprobada').length"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Esperando revisión comercial</p>
+            </div>
+
+            <div @click="navigate('negotiations')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-[#268CC5] transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Negociaciones Activas</span><span>🤝</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-indigo-600" x-text="negotiations.filter(n=>n.stage!=='Ganada' && n.stage!=='Perdida').length"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Oportunidades Kanban</p>
+            </div>
+
+            <div @click="navigate('inventory')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-red-400 transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Alertas Stock / MOQ</span><span>⚠️</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-red-600" x-text="lowStockCount"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Productos en umbral crítico</p>
+            </div>
+
+            <div @click="navigate('lots')" class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 cursor-pointer hover:border-[#16866C] transition">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Lotes Registrados</span><span>🏷️</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-purple-700" x-text="lots.length"></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Trazabilidad SHA-256 activa</p>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <div class="flex items-center justify-between text-xs font-bold text-[#71829B]"><span>Volumen Comprometido</span><span>⚖️</span></div>
+              <div class="mt-3 text-3xl font-extrabold text-amber-700"><span x-text="totalKg.toLocaleString('es-EC')"></span> <span class="text-sm font-semibold text-[#71829B]">kg</span></div>
+              <p class="mt-1 text-[11px] text-[#71829B]">Mercancía asociada a pedidos</p>
+            </div>
+          </div>
+
+          <!-- B. 6 Gráficos Estadísticos y Paneles Estadísticos -->
+          <div class="grid gap-6 lg:grid-cols-3 mb-8">
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-xs font-bold uppercase text-[#71829B] mb-4">1. Actividad Comercial Mensual</h3>
+              <div class="space-y-3 text-xs">
+                <div>
+                  <div class="flex justify-between mb-1"><span class="font-bold">Cotizaciones</span><span class="text-[#268CC5] font-bold" x-text="quotes.length"></span></div>
+                  <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden"><div class="bg-[#268CC5] h-full rounded-full" :style="'width: ' + Math.min(quotes.length * 15, 100) + '%'"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><span class="font-bold">Pedidos Confirmados</span><span class="text-[#16866C] font-bold" x-text="orders.length"></span></div>
+                  <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden"><div class="bg-[#16866C] h-full rounded-full" :style="'width: ' + Math.min(orders.length * 20, 100) + '%'"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-xs font-bold uppercase text-[#71829B] mb-4">2. Estado de Negociaciones</h3>
+              <div class="space-y-2 text-xs">
+                <template x-for="stage in ['Nuevo contacto', 'Cotización enviada', 'En negociación', 'Ganada']">
+                  <div class="flex items-center justify-between p-2 rounded bg-[#F7F9FC]">
+                    <span class="text-[#71829B]" x-text="stage"></span>
+                    <span class="font-bold text-[#1C2B42]" x-text="negotiations.filter(n=>n.stage===stage).length"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-xs font-bold uppercase text-[#71829B] mb-4">3. Inventario (Top Productos)</h3>
+              <div class="space-y-3 text-xs">
+                <template x-for="item in catalog.slice(0,3)" :key="item.id">
+                  <div>
+                    <div class="flex justify-between mb-1"><span class="font-bold truncate max-w-[150px]" x-text="item.name"></span><span class="text-teal-700 font-bold" x-text="item.availableQty + ' ' + item.unit"></span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="bg-teal-600 h-full rounded-full" :style="'width: ' + Math.min(item.availableQty / 50, 100) + '%'"></div></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-xs font-bold uppercase text-[#71829B] mb-4">4. Pedidos por Estado</h3>
+              <div class="space-y-2 text-xs">
+                <template x-for="st in ['Confirmado', 'En producción', 'Despachado', 'Entregado']">
+                  <div class="flex items-center justify-between p-2 rounded bg-[#F7F9FC]">
+                    <span class="text-[#71829B]" x-text="st"></span>
+                    <span class="font-bold text-[#193B69]" x-text="orders.filter(o=>o.status===st).length"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-xs font-bold uppercase text-[#71829B] mb-4">5. Volumen en Lotes por Producto</h3>
+              <div class="space-y-3 text-xs">
+                <template x-for="l in lots.slice(0,3)" :key="l.id">
+                  <div>
+                    <div class="flex justify-between mb-1"><span class="font-bold" x-text="l.product"></span><span class="font-bold text-purple-700" x-text="l.quantity + ' kg'"></span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="bg-purple-600 h-full rounded-full" :style="'width: ' + Math.min(l.quantity / 20, 100) + '%'"></div></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-xs font-bold uppercase text-[#71829B] mb-4">6. Costos por Categoría (ERP)</h3>
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between p-2 rounded bg-[#F7F9FC]"><span class="text-[#71829B]">Flete Internacional</span><span class="font-bold">$2,400.00</span></div>
+                <div class="flex justify-between p-2 rounded bg-[#F7F9FC]"><span class="text-[#71829B]">Seguro de Carga</span><span class="font-bold">$350.00</span></div>
+                <div class="flex justify-between p-2 rounded bg-[#F7F9FC]"><span class="text-[#71829B]">Gestión Aduanera</span><span class="font-bold">$680.00</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- C & D. Actividad Reciente y Alertas de Stock -->
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-sm font-bold text-[#1C2B42] mb-3">C. Últimas Actividades del Sistema</h3>
+              <div class="space-y-2">
+                <template x-for="act in interactionLogs.slice(0,4)" :key="act.id">
+                  <div class="flex items-center justify-between p-3 rounded-xl bg-[#F7F9FC] border border-[#DCE5EF] text-xs">
+                    <span class="text-[#1C2B42]" x-text="act.buyerName + ' — ' + act.type + ': ' + act.notes"></span>
+                    <span class="text-[10px] text-[#71829B]" x-text="act.date"></span>
+                  </div>
+                </template>
+                <div x-show="!interactionLogs.length" class="text-xs text-[#71829B] py-3 text-center">Sin interacciones registradas.</div>
+              </div>
+            </div>
+
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="text-sm font-bold text-[#1C2B42] mb-3">D. Alertas y Pendientes de Stock (MOQ)</h3>
+              <div class="space-y-2 text-xs">
+                <template x-for="item in catalog.filter(c=> (Number(c.availableQty)-Number(c.reservedQty||0)) <= Number(c.moq))" :key="item.id">
+                  <div class="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-200 text-red-900">
+                    <span>⚠️ Stock crítico en <strong x-text="item.name"></strong> (Disponible menor o igual a MOQ).</span>
+                    <button @click="navigate('inventory')" class="font-bold underline">Ver Inventario</button>
+                  </div>
+                </template>
+                <div x-show="lowStockCount===0" class="p-3 text-center text-[#71829B] text-xs">No hay alertas de stock bajo actualmente.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. MÓDULO CRM: COMPRADORES INTERNACIONALES -->
+        <section x-show="page==='buyers'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Compradores Internacionales</h2><p class="text-xs text-[#71829B]">Administra empresas e interacciones con estados interactivos.</p></div>
+            <button @click="openModal('buyer')" class="btn-primary">＋ Registrar Comprador</button>
+          </div>
+
+          <!-- Filtros de Estado Interactivos (UX/UI) -->
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button @click="buyerStatusFilter=''" class="px-3 py-1.5 rounded-lg text-xs font-bold" :class="buyerStatusFilter===''?'bg-[#193B69] text-white':'bg-white text-[#71829B] border border-[#DCE5EF]'">Todos</button>
+            <button @click="buyerStatusFilter='Activo'" class="px-3 py-1.5 rounded-lg text-xs font-bold" :class="buyerStatusFilter==='Activo'?'bg-emerald-600 text-white':'bg-emerald-50 text-emerald-700 border border-emerald-200'">● Activos</button>
+            <button @click="buyerStatusFilter='Potencial'" class="px-3 py-1.5 rounded-lg text-xs font-bold" :class="buyerStatusFilter==='Potencial'?'bg-amber-500 text-white':'bg-amber-50 text-amber-700 border border-amber-200'">● Potenciales</button>
+            <button @click="buyerStatusFilter='Inactivo'" class="px-3 py-1.5 rounded-lg text-xs font-bold" :class="buyerStatusFilter==='Inactivo'?'bg-slate-500 text-white':'bg-slate-100 text-slate-600 border border-slate-200'">● Inactivos</button>
+          </div>
+
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#F7F9FC] text-[#71829B] font-bold uppercase text-[10px] border-b border-[#DCE5EF]"><tr><th class="p-4">Empresa</th><th class="p-4">Contacto</th><th class="p-4">País / Ciudad</th><th class="p-4">Correo</th><th class="p-4">Interés</th><th class="p-4">Estado</th><th class="p-4 text-right">Acciones</th></tr></thead>
+              <tbody>
+                <template x-for="b in filteredBuyers" :key="b.id">
+                  <tr class="table-row border-t border-[#DCE5EF]">
+                    <td class="p-4 font-bold text-[#1C2B42]" x-text="b.company"></td>
+                    <td class="p-4 text-[#71829B]" x-text="b.contact"></td>
+                    <td class="p-4 font-semibold text-[#268CC5]" x-text="b.country + (b.city ? ' ('+b.city+')' : '')"></td>
+                    <td class="p-4 text-[#71829B]" x-text="b.email"></td>
+                    <td class="p-4 text-[#71829B]" x-text="b.productInterest"></td>
+                    <td class="p-4">
+                      <span class="rounded-full px-2.5 py-1 text-[10px] font-bold cursor-pointer" 
+                        :class="b.status==='Activo'?'bg-emerald-50 text-emerald-700':(b.status==='Potencial'?'bg-amber-50 text-amber-700':'bg-slate-100 text-slate-600')" 
+                        @click="buyerStatusFilter=b.status" x-text="b.status"></span>
+                    </td>
+                    <td class="p-4 text-right space-x-2">
+                      <button @click="deleteItem('buyers', b.id)" class="text-red-500 font-semibold hover:underline">Eliminar</button>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="!filteredBuyers.length"><td colspan="7" class="p-8 text-center text-[#71829B]">No hay compradores que coincidan con la búsqueda.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3. MÓDULO CRM: CATÁLOGO DE PRODUCTOS (12 PRODUCTOS ECUATORIANOS + FILTROS CERTIFICACIÓN) -->
+        <section x-show="page==='catalog'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Catálogo de Productos Ecuatorianos (12 Base)</h2><p class="text-xs text-[#71829B]">Filtros rápidos por certificaciones internacionales (Orgánico, GlobalG.A.P., etc.).</p></div>
+            <button @click="openModal('catalog')" class="btn-primary">＋ Nuevo Producto</button>
+          </div>
+
+          <!-- Filtros de Certificación UX/UI -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <button @click="certFilter=''" class="px-3 py-1.5 rounded-lg text-xs font-bold" :class="certFilter===''?'bg-[#193B69] text-white':'bg-white text-[#71829B] border border-[#DCE5EF]'">Todas las Certificaciones</button>
+            <template x-for="cert in ['Orgánico', 'GlobalG.A.P.', 'Comercio Justo', 'HACCP', 'Flor Ecuador']" :key="cert">
+              <button @click="certFilter=cert" class="px-3 py-1.5 rounded-lg text-xs font-bold" :class="certFilter===cert?'bg-[#268CC5] text-white':'bg-white text-[#268CC5] border border-[#DCE5EF]'" x-text="cert"></button>
+            </template>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <template x-for="p in filteredCatalog" :key="p.id">
+              <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex justify-between items-start"><h3 class="text-sm font-bold text-[#1C2B42]" x-text="p.name"></h3><button @click="deleteItem('catalog', p.id)" class="text-xs text-red-500">✕</button></div>
+                  <p class="text-xs text-[#268CC5] font-semibold mt-1" x-text="p.category + ' · ' + p.presentation"></p>
+                  <p class="text-xs text-[#71829B] mt-2" x-text="p.description"></p>
+                  <div class="mt-3 grid grid-cols-2 gap-2 text-[11px] bg-[#F7F9FC] p-2.5 rounded-xl border border-[#DCE5EF]">
+                    <div><span class="text-[#71829B] block">Disponible:</span> <strong x-text="Number(p.availableQty).toLocaleString('es-EC') + ' ' + p.unit"></strong></div>
+                    <div><span class="text-[#71829B] block">MOQ (Mínimo):</span> <strong x-text="Number(p.moq).toLocaleString('es-EC') + ' ' + p.unit"></strong></div>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-[#DCE5EF] flex flex-wrap gap-1">
+                  <template x-for="c in p.certs" :key="c"><span class="bg-blue-50 text-[#268CC5] text-[10px] font-bold px-2 py-0.5 rounded-md" x-text="c"></span></template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <!-- 4. MÓDULO CRM: COTIZACIONES & SIMULADOR DE INCOTERMS -->
+        <section x-show="page==='quotes'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Cotizaciones Internacionales</h2><p class="text-xs text-[#71829B]">Ofertas comerciales, cálculo de Incoterms y conversión a pedido.</p></div>
+            <button @click="openModal('quote')" class="btn-primary">＋ Generar Cotización</button>
+          </div>
+
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#F7F9FC] text-[#71829B] font-bold uppercase text-[10px] border-b border-[#DCE5EF]"><tr><th class="p-4">Nº / Fecha</th><th class="p-4">Comprador</th><th class="p-4">Producto</th><th class="p-4">Cantidad</th><th class="p-4">Incoterm</th><th class="p-4">Total Desglosado</th><th class="p-4">Estado</th><th class="p-4 text-right">Acciones</th></tr></thead>
+              <tbody>
+                <template x-for="q in quotes" :key="q.id">
+                  <tr class="table-row border-t border-[#DCE5EF]">
+                    <td class="p-4"><strong class="text-[#1C2B42]" x-text="q.code"></strong><p class="text-[10px] text-[#71829B]" x-text="q.date"></p></td>
+                    <td class="p-4 font-bold text-[#1C2B42]" x-text="q.buyerName"></td>
+                    <td class="p-4 text-[#71829B]" x-text="q.product"></td>
+                    <td class="p-4 text-[#71829B]" x-text="Number(q.quantity).toLocaleString('es-EC')+' kg'"></td>
+                    <td class="p-4 font-semibold text-[#268CC5]" x-text="q.incoterm"></td>
+                    <td class="p-4">
+                      <strong class="text-[#1C2B42]" x-text="'$' + Number(q.totalPrice).toLocaleString('es-EC')"></strong>
+                      <p class="text-[9px] text-[#71829B]" x-text="'(Base: $' + q.basePrice + ' + Flete/Seg: $' + (q.totalPrice - q.basePrice) + ')'"></p>
+                    </td>
+                    <td class="p-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold bg-amber-50 text-amber-700" x-text="q.status"></span></td>
+                    <td class="p-4 text-right space-x-2">
+                      <button x-show="q.status!=='Aprobada'" @click="approveQuoteToOrder(q)" class="bg-[#16866C] text-white px-2.5 py-1 rounded-lg text-[10px] font-bold hover:bg-[#126c56]">Aprobar & Convertir a Pedido</button>
+                      <button @click="deleteItem('quotes', q.id)" class="text-red-500 font-semibold">Eliminar</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 5. MÓDULO CRM: PIPELINE KANBAN (DRAG & DROP) -->
+        <section x-show="page==='negotiations'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Pipeline de Negociaciones (Kanban Visual)</h2><p class="text-xs text-[#71829B]">Arrastra las tarjetas entre columnas para actualizar su etapa comercial.</p></div>
+            <button @click="openModal('negotiation')" class="btn-primary">＋ Nueva Oportunidad</button>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+            <template x-for="stage in ['Nuevo contacto', 'Contactado', 'Cotización enviada', 'En negociación', 'Ganada', 'Perdida']" :key="stage">
+              <div class="kanban-col" @dragover.prevent @drop="dropNegotiation($event, stage)">
+                <div class="font-bold text-xs text-[#1C2B42] pb-2 border-b border-[#DCE5EF] mb-3 flex justify-between items-center">
+                  <span x-text="stage"></span>
+                  <span class="bg-white border px-2 py-0.5 rounded-full text-[10px] text-[#71829B]" x-text="negotiations.filter(n=>n.stage===stage).length"></span>
+                </div>
+                <div class="space-y-3">
+                  <template x-for="n in negotiations.filter(n=>n.stage===stage)" :key="n.id">
+                    <div class="kanban-card p-3 rounded-xl bg-white border border-[#DCE5EF] soft-shadow text-xs space-y-2" draggable="true" @dragstart="dragStart($event, n.id)">
+                      <div class="font-bold text-[#1C2B42]" x-text="n.title"></div>
+                      <div class="text-[#71829B]" x-text="'Contacto: ' + n.contact"></div>
+                      <div class="font-bold text-[#268CC5]" x-text="'$' + Number(n.value).toLocaleString('es-EC')"></div>
+                      <div class="pt-2 border-t border-slate-100 flex justify-end">
+                        <button @click="deleteItem('negotiations', n.id)" class="text-red-500 text-[10px]">Eliminar</button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <!-- 6. MÓDULO CRM: CENTRO DE COMUNICACIONES UNIFICADO -->
+        <section x-show="page==='commercial_tracking'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Centro de Comunicaciones Unificado</h2><p class="text-xs text-[#71829B]">Registro de llamadas, correos y reuniones con compradores.</p></div>
+            <button @click="openModal('activity')" class="btn-primary">＋ Registrar Interacción</button>
+          </div>
+
+          <div class="space-y-3">
+            <template x-for="act in interactionLogs" :key="act.id">
+              <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-4 flex items-start gap-4">
+                <div class="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white text-xs shrink-0"
+                  :class="act.type==='Llamada'?'bg-blue-600':(act.type==='Correo'?'bg-teal-600':'bg-emerald-600')">
+                  <span x-text="act.type==='Llamada'?'📞':(act.type==='Correo'?'✉️':'💬')"></span>
+                </div>
+                <div class="flex-1">
+                  <div class="flex justify-between items-center">
+                    <strong class="text-xs text-[#1C2B42]" x-text="act.buyerName + ' — ' + act.type"></strong>
+                    <span class="text-[10px] text-[#71829B]" x-text="act.date"></span>
+                  </div>
+                  <p class="text-xs text-[#71829B] mt-1" x-text="act.notes"></p>
+                </div>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <!-- 7. MÓDULO ERP: PRODUCTORES Y PROVEEDORES -->
+        <section x-show="page==='producers'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Gestión de Productores (ERP)</h2><p class="text-xs text-[#71829B]">Directorio de proveedores ecuatorianos y capacidades.</p></div>
+            <button @click="openModal('producer')" class="btn-success">＋ Registrar Productor</button>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <template x-for="p in producers" :key="p.id">
+              <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex justify-between items-start"><h3 class="text-sm font-bold text-[#1C2B42]" x-text="p.name"></h3><button @click="deleteItem('producers', p.id)" class="text-xs text-red-500">✕</button></div>
+                  <p class="text-xs text-[#71829B] mt-0.5" x-text="p.type + ' · ' + p.province"></p>
+                  <div class="mt-3 text-xs bg-[#F7F9FC] p-3 rounded-xl border border-[#DCE5EF] space-y-1">
+                    <p>🌾 <strong>Finca:</strong> <span x-text="p.farm"></span></p>
+                    <p>📦 <strong>Capacidad mensual:</strong> <span x-text="Number(p.capacity).toLocaleString('es-EC') + ' kg'"></span></p>
+                    <p>📧 <span x-text="p.email"></span></p>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <!-- 8. MÓDULO ERP: INVENTARIO & ALERTAS MOQ -->
+        <section x-show="page==='inventory'" x-transition.opacity x-cloak>
+          <div class="mb-6"><h2 class="text-2xl font-extrabold text-[#1C2B42]">Control de Inventario y Stock (ERP)</h2><p class="text-xs text-[#71829B]">Cálculo automático de reservas y alertas visuales frente al MOQ internacional.</p></div>
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#F7F9FC] text-[#71829B] font-bold uppercase text-[10px] border-b border-[#DCE5EF]"><tr><th class="p-4">Producto</th><th class="p-4">Stock Total</th><th class="p-4">Reservado</th><th class="p-4">Disponible</th><th class="p-4">MOQ Mínimo</th><th class="p-4">Estado de Alerta</th></tr></thead>
+              <tbody>
+                <template x-for="item in catalog" :key="item.id">
+                  <tr class="table-row border-t border-[#DCE5EF]">
+                    <td class="p-4 font-bold text-[#1C2B42]" x-text="item.name"></td>
+                    <td class="p-4 font-semibold text-[#1C2B42]" x-text="Number(item.availableQty).toLocaleString('es-EC') + ' ' + item.unit"></td>
+                    <td class="p-4 font-semibold text-amber-600" x-text="Number(item.reservedQty || 0).toLocaleString('es-EC') + ' ' + item.unit"></td>
+                    <td class="p-4 font-bold text-[#16866C]" x-text="(Number(item.availableQty) - Number(item.reservedQty || 0)).toLocaleString('es-EC') + ' ' + item.unit"></td>
+                    <td class="p-4 text-[#71829B]" x-text="Number(item.moq).toLocaleString('es-EC') + ' ' + item.unit"></td>
+                    <td class="p-4">
+                      <span class="rounded-full px-2.5 py-1 text-[10px] font-bold" 
+                        :class="(item.availableQty - (item.reservedQty||0)) <= item.moq ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'"
+                        x-text="(item.availableQty - (item.reservedQty||0)) <= item.moq ? '⚠️ MOQ Crítico' : '✓ Stock Óptimo'"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 9. MÓDULO ERP: GESTIÓN DE PEDIDOS -->
+        <section x-show="page==='orders'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Gestión de Pedidos Confirmados (ERP)</h2><p class="text-xs text-[#71829B]">Pedidos vinculados con cotizaciones y reserva automática de stock.</p></div>
+            <button @click="openModal('order')" class="btn-success">＋ Registrar Pedido</button>
+          </div>
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#F7F9FC] text-[#71829B] font-bold uppercase text-[10px] border-b border-[#DCE5EF]"><tr><th class="p-4">Código</th><th class="p-4">Comprador</th><th class="p-4">Producto</th><th class="p-4">Cantidad</th><th class="p-4">Entrega</th><th class="p-4">Estado</th><th class="p-4 text-right">Acciones</th></tr></thead>
+              <tbody>
+                <template x-for="o in orders" :key="o.id">
+                  <tr class="table-row border-t border-[#DCE5EF]">
+                    <td class="p-4 font-bold text-[#1C2B42]" x-text="o.code"></td>
+                    <td class="p-4 text-[#71829B]" x-text="o.buyerName"></td>
+                    <td class="p-4 text-[#71829B]" x-text="o.product"></td>
+                    <td class="p-4 font-semibold text-[#1C2B42]" x-text="Number(o.quantity).toLocaleString('es-EC')+' kg'"></td>
+                    <td class="p-4 text-[#71829B]" x-text="o.deliveryDate"></td>
+                    <td class="p-4"><span class="rounded-full px-2.5 py-1 text-[10px] font-bold bg-blue-50 text-[#193B69]" x-text="o.status"></span></td>
+                    <td class="p-4 text-right"><button @click="deleteItem('orders', o.id)" class="text-red-500 font-semibold">Eliminar</button></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 10. MÓDULO ERP: LOTES Y TRAZABILIDAD SHA-256 -->
+        <section x-show="page==='lots'" x-transition.opacity x-cloak>
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div><h2 class="text-2xl font-extrabold text-[#1C2B42]">Lotes y Trazabilidad Criptográfica SHA-256</h2><p class="text-xs text-[#71829B]">Integración de lotes con trazabilidad de origen.</p></div>
+            <button @click="openModal('lot')" class="btn-success">＋ Registrar Lote</button>
+          </div>
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-[#F7F9FC] text-[#71829B] font-bold uppercase text-[10px] border-b border-[#DCE5EF]"><tr><th class="p-4">Lote / Producto</th><th class="p-4">Productor</th><th class="p-4">Cantidad</th><th class="p-4">Destino</th><th class="p-4">Huella SHA-256</th><th class="p-4 text-right">Acciones</th></tr></thead>
+              <tbody>
+                <template x-for="l in lots" :key="l.id">
+                  <tr class="table-row border-t border-[#DCE5EF]">
+                    <td class="p-4"><strong class="text-[#1C2B42]" x-text="l.product"></strong><p class="text-[10px] text-[#71829B]" x-text="l.code"></p></td>
+                    <td class="p-4 text-[#71829B]" x-text="producerName(l.producerId)"></td>
+                    <td class="p-4 font-semibold text-[#1C2B42]" x-text="Number(l.quantity).toLocaleString('es-EC')+' kg'"></td>
+                    <td class="p-4 text-[#71829B]" x-text="l.destination"></td>
+                    <td class="p-4">
+                      <button x-show="!l.txHash" @click="generateHash(l)" class="bg-purple-50 text-purple-700 font-bold px-3 py-1.5 rounded-lg text-[10px]">Generar Hash SHA-256</button>
+                      <span x-show="l.txHash" class="font-mono text-[10px] text-purple-800 bg-purple-50 p-1.5 rounded block truncate max-w-[180px]" :title="l.txHash" x-text="l.txHash"></span>
+                    </td>
+                    <td class="p-4 text-right"><button @click="deleteItem('lots', l.id)" class="text-red-500 font-semibold">Eliminar</button></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 11. MÓDULO ERP: DOCUMENTACIÓN DE EXPORTACIÓN INTEGRADA -->
+        <section x-show="page==='documentation'" x-transition.opacity x-cloak>
+          <div class="mb-6"><h2 class="text-2xl font-extrabold text-[#1C2B42]">Documentación Aduanera & Exportación</h2><p class="text-xs text-[#71829B]">Control de facturas, listas de empaque y certificados de origen asociados a los pedidos.</p></div>
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-6 space-y-3">
+            <div class="flex items-center justify-between p-3.5 bg-[#F7F9FC] rounded-xl text-xs border border-[#DCE5EF]">
+              <div><strong>📄 Factura Comercial Internacional (Commercial Invoice)</strong><p class="text-[10px] text-[#71829B]">Generado automáticamente al aprobar pedidos.</p></div>
+              <span class="font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">✓ Validado</span>
+            </div>
+            <div class="flex items-center justify-between p-3.5 bg-[#F7F9FC] rounded-xl text-xs border border-[#DCE5EF]">
+              <div><strong>📦 Lista de Empaque (Packing List)</strong><p class="text-[10px] text-[#71829B]">Desglose de pesos y bultos por lote de exportación.</p></div>
+              <span class="font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">✓ Validado</span>
+            </div>
+            <div class="flex items-center justify-between p-3.5 bg-[#F7F9FC] rounded-xl text-xs border border-[#DCE5EF]">
+              <div><strong>📜 Certificado de Origen (Ministerio de Producción)</strong><p class="text-[10px] text-[#71829B]">Certificación de preferencialidad arancelaria.</p></div>
+              <span class="font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">⏳ En Trámite</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12. MÓDULO ERP: SIMULADOR DE COSTOS & LOGÍSTICA (INCOTERMS) -->
+        <section x-show="page==='costs'" x-transition.opacity x-cloak>
+          <div class="mb-6"><h2 class="text-2xl font-extrabold text-[#1C2B42]">Simulador de Costos y Cotizaciones (Incoterms)</h2><p class="text-xs text-[#71829B]">Cálculo automático del precio final sumando base, flete y seguro.</p></div>
+          
+          <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-6 grid md:grid-cols-2 gap-6">
+            <div class="space-y-4 text-xs">
+              <h3 class="font-bold text-sm text-[#1C2B42]">Calculadora de Exportación</h3>
+              <div><label class="field-label">Precio Base del Producto ($)</label><input class="field" type="number" x-model.number="calcBase"></div>
+              <div><label class="field-label">Costo de Flete Internacional ($)</label><input class="field" type="number" x-model.number="calcFreight"></div>
+              <div><label class="field-label">Seguro de Carga ($)</label><input class="field" type="number" x-model.number="calcInsurance"></div>
+              <div><label class="field-label">Modalidad Incoterm</label>
+                <select class="field" x-model="calcIncoterm">
+                  <option value="EXW">EXW (En fábrica - Solo precio base)</option>
+                  <option value="FOB">FOB (Puesto en puerto de origen)</option>
+                  <option value="CIF">CIF (Incluye Flete + Seguro)</option>
+                  <option value="DDP">DDP (Puesto en destino con impuestos)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-[#F7F9FC] border border-[#DCE5EF] p-6 rounded-2xl flex flex-col justify-between">
+              <div>
+                <h4 class="text-xs font-bold uppercase text-[#71829B]">Resultado de Simulación</h4>
+                <div class="text-3xl font-extrabold text-[#268CC5] mt-2" x-text="'$' + calculatedTotal.toLocaleString('es-EC')"></div>
+                <p class="text-xs text-[#71829B] mt-2" x-text="'Incoterm seleccionado: ' + calcIncoterm"></p>
+              </div>
+              <button @click="notify('Simulación de costos guardada exitosamente.')" class="btn-primary w-full">Guardar Simulación</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 13. MÓDULO ERP: RED LOGÍSTICA -->
+        <section x-show="page==='services'" x-transition.opacity x-cloak>
+          <div class="mb-6"><h2 class="text-2xl font-extrabold text-[#1C2B42]">Red de Servicios Logísticos</h2><p class="text-xs text-[#71829B]">Directorio de operadores de transporte, aduanas y seguros.</p></div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="font-bold text-sm text-[#1C2B42]">Andean Logistics Express</h3>
+              <p class="text-xs text-[#16866C] mt-1 font-semibold">Transporte Terrestre y Carga Pesada</p>
+              <p class="text-xs text-[#71829B] mt-2">Cobertura en rutas andinas y conexión con puertos de embarque.</p>
+            </div>
+            <div class="soft-shadow rounded-2xl border border-[#DCE5EF] bg-white p-5">
+              <h3 class="font-bold text-sm text-[#1C2B42]">Aduana & Trámites S.A.</h3>
+              <p class="text-xs text-[#16866C] mt-1 font-semibold">Agente de Aduanas Autorizado</p>
+              <p class="text-xs text-[#71829B] mt-2">Gestión de declaraciones aduaneras de exportación (DAU).</p>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODALES DE CREACIÓN -->
+  <!-- Modal Comprador -->
+  <div x-show="modalType==='buyer'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Registrar Comprador Internacional</h3>
+      <form @submit.prevent="saveItem('buyer')" class="space-y-3 text-xs">
+        <div><label class="field-label">Empresa *</label><input class="field" x-model.trim="form.company" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Contacto *</label><input class="field" x-model.trim="form.contact" required></div>
+          <div><label class="field-label">País *</label><input class="field" x-model.trim="form.country" required></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Correo *</label><input class="field" type="email" x-model.trim="form.email" required></div>
+          <div><label class="field-label">Producto de Interés</label><input class="field" x-model.trim="form.productInterest"></div>
+        </div>
+        <div><label class="field-label">Estado</label><select class="field" x-model="form.status"><option>Activo</option><option>Potencial</option><option>Inactivo</option></select></div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Interacción CRM -->
+  <div x-show="modalType==='activity'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Registrar Interacción Comercial</h3>
+      <form @submit.prevent="saveItem('activity')" class="space-y-3 text-xs">
+        <div><label class="field-label">Comprador *</label><input class="field" x-model.trim="form.buyerName" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Tipo *</label><select class="field" x-model="form.type"><option>Llamada</option><option>Correo</option><option>Reunión WhatsApp</option></select></div>
+          <div><label class="field-label">Fecha *</label><input class="field" type="date" x-model="form.date" required></div>
+        </div>
+        <div><label class="field-label">Notas / Acuerdos</label><textarea class="field" x-model.trim="form.notes" required></textarea></div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Catálogo -->
+  <div x-show="modalType==='catalog'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Nuevo Producto en Catálogo</h3>
+      <form @submit.prevent="saveItem('catalog')" class="space-y-3 text-xs">
+        <div><label class="field-label">Nombre del Producto *</label><input class="field" x-model.trim="form.name" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Categoría *</label><select class="field" x-model="form.category"><option>Agrícola</option><option>Frutas</option><option>Cereales</option><option>Acuícola</option><option>Florícola</option><option>Agroindustrial</option><option>Alimentos procesados</option></select></div>
+          <div><label class="field-label">Unidad *</label><select class="field" x-model="form.unit"><option>kg</option><option>cajas</option><option>tallos</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Presentación *</label><input class="field" x-model.trim="form.presentation" required placeholder="Ej. Saco 50kg"></div>
+          <div><label class="field-label">Cantidad Disponible *</label><input class="field" type="number" x-model.number="form.availableQty" required></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">MOQ (Mínimo) *</label><input class="field" type="number" x-model.number="form.moq" required></div>
+          <div><label class="field-label">Certificaciones</label><input class="field" x-model.trim="form.certStr" placeholder="Orgánico, GlobalGAP"></div>
+        </div>
+        <div><label class="field-label">Descripción</label><textarea class="field" x-model.trim="form.description"></textarea></div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Cotización -->
+  <div x-show="modalType==='quote'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Generar Cotización</h3>
+      <form @submit.prevent="saveItem('quote')" class="space-y-3 text-xs">
+        <div><label class="field-label">Comprador *</label><input class="field" x-model.trim="form.buyerName" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Producto *</label><input class="field" x-model.trim="form.product" required></div>
+          <div><label class="field-label">Cantidad (kg) *</label><input class="field" type="number" x-model.number="form.quantity" required></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Precio Base ($) *</label><input class="field" type="number" x-model.number="form.basePrice" required></div>
+          <div><label class="field-label">Incoterm *</label><select class="field" x-model="form.incoterm"><option>FOB</option><option>CIF</option><option>EXW</option><option>DDP</option></select></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Negociación -->
+  <div x-show="modalType==='negotiation'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Nueva Oportunidad de Negociación</h3>
+      <form @submit.prevent="saveItem('negotiation')" class="space-y-3 text-xs">
+        <div><label class="field-label">Título / Empresa *</label><input class="field" x-model.trim="form.title" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Contacto *</label><input class="field" x-model.trim="form.contact" required></div>
+          <div><label class="field-label">Valor Estimado ($) *</label><input class="field" type="number" x-model.number="form.value" required></div>
+        </div>
+        <div><label class="field-label">Etapa *</label><select class="field" x-model="form.stage"><option>Nuevo contacto</option><option>Contactado</option><option>Cotización enviada</option><option>En negociación</option><option>Ganada</option><option>Perdida</option></select></div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Productor -->
+  <div x-show="modalType==='producer'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Registrar Productor</h3>
+      <form @submit.prevent="saveItem('producer')" class="space-y-3 text-xs">
+        <div><label class="field-label">Nombre / Asociación *</label><input class="field" x-model.trim="form.name" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Tipo</label><select class="field" x-model="form.type"><option>Productor individual</option><option>Asociación</option><option>Cooperativa</option><option>MIPYME</option></select></div>
+          <div><label class="field-label">Provincia *</label><input class="field" x-model.trim="form.province" required></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Finca</label><input class="field" x-model.trim="form.farm"></div>
+          <div><label class="field-label">Capacidad mensual (kg)</label><input class="field" type="number" x-model.number="form.capacity"></div>
+        </div>
+        <div><label class="field-label">Correo</label><input class="field" type="email" x-model.trim="form.email"></div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-success">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Pedido -->
+  <div x-show="modalType==='order'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Registrar Pedido Confirmado</h3>
+      <form @submit.prevent="saveItem('order')" class="space-y-3 text-xs">
+        <div><label class="field-label">Comprador *</label><input class="field" x-model.trim="form.buyerName" required></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Producto *</label><input class="field" x-model.trim="form.product" required></div>
+          <div><label class="field-label">Cantidad (kg) *</label><input class="field" type="number" x-model.number="form.quantity" required></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Fecha de Entrega *</label><input class="field" type="date" x-model="form.deliveryDate" required></div>
+          <div><label class="field-label">Estado</label><select class="field" x-model="form.status"><option>Confirmado</option><option>En producción</option><option>Despachado</option><option>Entregado</option></select></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-success">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Lote -->
+  <div x-show="modalType==='lot'" x-cloak class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModals()">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4 text-[#1C2B42]">Registrar Lote de Exportación</h3>
+      <form @submit.prevent="saveItem('lot')" class="space-y-3 text-xs">
+        <div><label class="field-label">Productor *</label><select class="field" x-model="form.producerId" required><option value="">Seleccionar productor</option><template x-for="p in producers" :key="p.id"><option :value="p.id" x-text="p.name"></option></template></select></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Producto *</label><input class="field" x-model.trim="form.product" required></div>
+          <div><label class="field-label">Cantidad (kg) *</label><input class="field" type="number" x-model.number="form.quantity" required></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="field-label">Destino *</label><input class="field" x-model.trim="form.destination" required></div>
+          <div><label class="field-label">Estado</label><select class="field" x-model="form.status"><option>Registrado</option><option>En preparación</option><option>En tránsito</option><option>Entregado</option></select></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3"><button type="button" @click="closeModals()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-success">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function exportaApp(){
+      const demoBuyers=[
+        {id:'B-001',company:'Global Foods BV',contact:'Jan Van Dijk',country:'Países Bajos',city:'Ámsterdam',email:'jvandijk@globalfoods.nl',productInterest:'Cacao fino de aroma',status:'Activo'},
+        {id:'B-002',company:'Andean Imports LLC',contact:'Sarah Miller',country:'Estados Unidos',city:'Miami',email:'smiller@andean.com',productInterest:'Quinua en grano',status:'Potencial'},
+        {id:'B-003',company:'EuroAndes Gmbh',contact:'Klaus Weber',country:'Alemania',city:'Hamburgo',email:'kweber@euroandes.de',productInterest:'Café de especialidad',status:'Activo'},
+        {id:'B-004',company:'Pacific Asia Trading',contact:'Chen Li',country:'China',city:'Shanghái',email:'cli@pacificasia.cn',productInterest:'Camarón',status:'Potencial'},
+        {id:'B-005',company:'Madrid Fresh S.A.',contact:'Carmen Ruiz',country:'España',city:'Madrid',email:'cruiz@madridfresh.es',productInterest:'Pitahaya',status:'Activo'},
+        {id:'B-006',company:'Nordic Organic AB',contact:'Astrid Lindstrom',country:'Suecia',city:'Estocolmo',email:'astrid@nordicorganic.se',productInterest:'Banano orgánico',status:'Activo'}
+      ];
+
+      const demoCatalog=[
+        {id:'C-001',name:'Cacao fino de aroma',category:'Agrícola',unit:'kg',presentation:'Sacos de 50kg',availableQty:1000,reservedQty:200,moq:500,certs:['Orgánico','Comercio Justo'],description:'Cacao en grano fino de aroma nacional.'},
+        {id:'C-002',name:'Banano orgánico',category:'Agrícola',unit:'cajas',presentation:'Cajas de 18.14kg',availableQty:2500,reservedQty:500,moq:300,certs:['GlobalG.A.P.','Orgánico'],description:'Banano de exportación cultivado sin pesticidas.'},
+        {id:'C-003',name:'Quinua',category:'Cereales',unit:'kg',presentation:'Sacos de 25kg',availableQty:750,reservedQty:100,moq:250,certs:['Orgánico'],description:'Quinua real andina seleccionada.'},
+        {id:'C-004',name:'Café de especialidad',category:'Agrícola',unit:'kg',presentation:'Sacos de 30kg',availableQty:500,reservedQty:0,moq:100,certs:['Rainforest Alliance'],description:'Café arábigo de altura de origen único.'},
+        {id:'C-005',name:'Pitahaya',category:'Frutas',unit:'kg',presentation:'Cajas de 4.5kg',availableQty:300,reservedQty:250,moq:150,certs:['GlobalG.A.P.'],description:'Pitahaya amarilla dulce de exportación.'},
+        {id:'C-006',name:'Uvilla',category:'Frutas',unit:'kg',presentation:'Bandejas de 1kg',availableQty:200,reservedQty:50,moq:50,certs:['HACCP'],description:'Uvilla deshidratada y fresca.'},
+        {id:'C-007',name:'Mango',category:'Frutas',unit:'kg',presentation:'Cajas de 4kg',availableQty:1200,reservedQty:300,moq:400,certs:['GlobalG.A.P.'],description:'Mango Tommy Atkins y Ataulfo.'},
+        {id:'C-008',name:'Brócoli congelado',category:'Agroindustrial',unit:'kg',presentation:'Cajas de 10kg',availableQty:1800,reservedQty:400,moq:500,certs:['HACCP','ISO 22000'],description:'Brócoli IQF cortado y congelado.'},
+        {id:'C-009',name:'Camarón',category:'Acuícola',unit:'kg',presentation:'Cajas master 2kg',availableQty:3000,reservedQty:1000,moq:1000,certs:['BAP','ASC'],description:'Camarón blanco vannamei congelado.'},
+        {id:'C-010',name:'Atún en conserva',category:'Alimentos procesados',unit:'cajas',presentation:'Cajas x 48 latas',availableQty:1500,reservedQty:200,moq:300,certs:['Dolphin Safe','FOS'],description:'Lomos de atún en aceite y agua.'},
+        {id:'C-011',name:'Rosas',category:'Florícola',unit:'tallos',presentation:'Cajas de 200 tallos',availableQty:10000,reservedQty:2000,moq:1000,certs:['Flor Ecuador'],description:'Rosas de exportación de tallo largo.'},
+        {id:'C-012',name:'Chocolate ecuatoriano',category:'Agroindustrial',unit:'cajas',presentation:'Display x 24 barras',availableQty:800,reservedQty:150,moq:100,certs:['Orgánico','Comercio Justo'],description:'Barras de chocolate fino de origen 70%.'}
+      ];
+
+      const demoQuotes=[
+        {id:'Q-001',code:'COT-2026-001',buyerName:'Global Foods BV',product:'Cacao fino de aroma',quantity:200,basePrice:1000,incoterm:'CIF',totalPrice:1350,date:'2026-11-05',status:'En revisión'}
+      ];
+
+      const demoNegotiations=[
+        {id:'N-001',title:'Expansión Europa - Global Foods',contact:'Jan Van Dijk',value:15000,stage:'En negociación'},
+        {id:'N-002',title:'Distribución US East Coast',contact:'Sarah Miller',value:8500,stage:'Cotización enviada'}
+      ];
+
+      const demoProducers=[
+        {id:'P-001',name:'Asociación Productores Carchi',type:'Asociación',province:'Carchi',farm:'Fincas del Norte',capacity:5200,email:'info@carchi.ec'}
+      ];
+
+      const demoOrders=[
+        {id:'O-001',code:'PED-2026-001',buyerName:'Global Foods BV',product:'Cacao fino de aroma',quantity:200,deliveryDate:'2026-12-15',status:'En producción'}
+      ];
+
+      const demoLots=[
+        {id:'L-001',code:'EXP-2026-001',producerId:'P-001',product:'Cacao fino de aroma',quantity:200,destination:'Países Bajos',status:'Registrado',txHash:''}
+      ];
+
+      const demoInteractions=[
+        {id:1,buyerName:'Global Foods BV',type:'Llamada',date:'2026-11-08',notes:'Reunión de seguimiento sobre especificaciones de empaque.'}
+      ];
+
+      return {
+        page:'dashboard', mobileMenu:false, globalSearch:'', buyerStatusFilter:'', certFilter:'',
+        buyers:[], catalog:[], quotes:[], negotiations:[], producers:[], orders:[], lots:[], interactionLogs:[],
+        modalType:'', form:{},
+        toast:{show:false, message:''}, toastTimer:null,
+        
+        // Simulador Incoterms
+        calcBase: 1000, calcFreight: 300, calcInsurance: 50, calcIncoterm: 'CIF',
+        get calculatedTotal(){
+          if(this.calcIncoterm==='EXW') return Number(this.calcBase);
+          if(this.calcIncoterm==='FOB') return Number(this.calcBase) + 100;
+          if(this.calcIncoterm==='CIF') return Number(this.calcBase) + Number(this.calcFreight) + Number(this.calcInsurance);
+          if(this.calcIncoterm==='DDP') return Number(this.calcBase) + Number(this.calcFreight) + Number(this.calcInsurance) + 250;
+          return Number(this.calcBase);
+        },
+
+        get filteredBuyers(){
+          return this.buyers.filter(b=> (!this.buyerStatusFilter || b.status===this.buyerStatusFilter) && [b.company,b.country].join(' ').toLowerCase().includes(this.globalSearch.toLowerCase()));
+        },
+        get filteredCatalog(){
+          return this.catalog.filter(c=> !this.certFilter || (c.certs||[]).includes(this.certFilter));
+        },
+        get lowStockCount(){
+          return this.catalog.filter(c=> (Number(c.availableQty)-Number(c.reservedQty||0)) <= Number(c.moq)).length;
+        },
+        get totalKg(){return this.lots.reduce((sum,l)=>sum+(Number(l.quantity)||0),0)},
+
+        init(){
+          try{
+            const saved=localStorage.getItem('exportalink_enterprise_v7');
+            if(saved){
+              const d=JSON.parse(saved);
+              this.buyers=d.buyers||[]; this.catalog=d.catalog||[]; this.quotes=d.quotes||[];
+              this.negotiations=d.negotiations||[]; this.producers=d.producers||[];
+              this.orders=d.orders||[]; this.lots=d.lots||[]; this.interactionLogs=d.interactionLogs||[];
+            }else{
+              this.loadDemo();
+            }
+          }catch(e){this.loadDemo();}
+        },
+        loadDemo(){
+          this.buyers=demoBuyers; this.catalog=demoCatalog; this.quotes=demoQuotes;
+          this.negotiations=demoNegotiations; this.producers=demoProducers;
+          this.orders=demoOrders; this.lots=demoLots; this.interactionLogs=demoInteractions;
+          this.persist();
+        },
+        persist(){
+          localStorage.setItem('exportalink_enterprise_v7', JSON.stringify({
+            buyers:this.buyers, catalog:this.catalog, quotes:this.quotes,
+            negotiations:this.negotiations, producers:this.producers,
+            orders:this.orders, lots:this.lots, interactionLogs:this.interactionLogs
+          }));
+        },
+        navigate(id){this.page=id; this.mobileMenu=false; window.scrollTo({top:0,behavior:'smooth'});},
+        openModal(type){this.modalType=type; this.form={};},
+        closeModals(){this.modalType=''; this.form={};},
+        
+        notify(msg){
+          this.toast.message=msg; this.toast.show=true;
+          clearTimeout(this.toastTimer);
+          this.toastTimer=setTimeout(()=>this.toast.show=false, 3000);
+        },
+
+        // Kanban Drag & Drop
+        dragStart(e, id){ e.dataTransfer.setData('text/plain', id); },
+        dropNegotiation(e, stage){
+          const id = e.dataTransfer.getData('text/plain');
+          const n = this.negotiations.find(x=>x.id===id);
+          if(n){ n.stage = stage; this.persist(); this.notify('Oportunidad movida a: ' + stage); }
+        },
+
+        saveItem(type){
+          if(type==='buyer'){
+            this.buyers.unshift({...this.form, id:'B-'+Date.now().toString().slice(-5), status:this.form.status||'Activo'});
+          }else if(type==='catalog'){
+            const certs=(this.form.certStr||'').split(',').map(s=>s.trim()).filter(Boolean);
+            this.catalog.unshift({...this.form, certs, reservedQty:0, id:'C-'+Date.now().toString().slice(-5)});
+          }else if(type==='activity'){
+            this.interactionLogs.unshift({...this.form, id:Date.now()});
+          }else if(type==='quote'){
+            const base = Number(this.form.basePrice)||1000;
+            const inc = this.form.incoterm||'CIF';
+            let total = base;
+            if(inc==='FOB') total += 100;
+            if(inc==='CIF') total += 350;
+            if(inc==='DDP') total += 600;
+            this.quotes.unshift({...this.form, basePrice:base, totalPrice:total, id:'Q-'+Date.now().toString().slice(-5), code:'COT-2026-'+Math.floor(100+Math.random()*900), date:new Date().toISOString().slice(0,10), status:'En revisión'});
+          }else if(type==='negotiation'){
+            this.negotiations.unshift({...this.form, id:'N-'+Date.now().toString().slice(-5), stage:this.form.stage||'Nuevo contacto'});
+          }else if(type==='producer'){
+            this.producers.unshift({...this.form, id:'P-'+Date.now().toString().slice(-5)});
+          }else if(type==='order'){
+            this.orders.unshift({...this.form, id:'O-'+Date.now().toString().slice(-5), code:'PED-2026-'+Math.floor(100+Math.random()*900), status:this.form.status||'Confirmado'});
+          }else if(type==='lot'){
+            this.lots.unshift({...this.form, id:'L-'+Date.now().toString().slice(-5), code:'EXP-2026-'+Math.floor(100+Math.random()*900), txHash:''});
+          }
+          this.persist(); this.closeModals(); this.notify('Registro guardado con éxito.');
+        },
+        
+        deleteItem(arrName, id){
+          if(confirm('¿Está seguro de eliminar este registro?')){
+            this[arrName]=this[arrName].filter(x=>x.id!==id);
+            this.persist(); this.notify('Registro eliminado.');
+          }
+        },
+
+        approveQuoteToOrder(quote){
+          quote.status = 'Aprobada';
+          this.orders.unshift({
+            id: 'O-'+Date.now().toString().slice(-5),
+            code: 'PED-2026-'+Math.floor(100+Math.random()*900),
+            buyerName: quote.buyerName,
+            product: quote.product,
+            quantity: quote.quantity,
+            deliveryDate: new Date(Date.now() + 14*86400000).toISOString().slice(0,10),
+            status: 'Confirmado'
+          });
+          
+          const catItem = this.catalog.find(c=>c.name.toLowerCase().includes((quote.product||'').toLowerCase()));
+          if(catItem) catItem.reservedQty = (Number(catItem.reservedQty)||0) + Number(quote.quantity);
+
+          this.persist();
+          this.notify('¡Cotización aprobada, pedido generado y stock reservado!');
+        },
+        
+        async generateHash(lot){
+          const payload=[lot.id,lot.code,lot.product,lot.quantity,lot.destination].join('|');
+          const bytes=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+          lot.txHash='0x'+Array.from(new Uint8Array(bytes)).map(b=>b.toString(16).padStart(2,'0')).join('');
+          this.persist();
+          this.notify('Huella SHA-256 generada para el lote.');
+        },
+
+        producerName(id){return this.producers.find(p=>p.id===id)?.name||'No asignado';},
+
+        exportCSV(){
+          let csv="Módulo,Dato 1,Dato 2\n";
+          this.buyers.forEach(b=>csv+=`Comprador,"${b.company}","${b.country}"\n`);
+          this.catalog.forEach(c=>csv+=`Catálogo,"${c.name}","${c.availableQty} ${c.unit}"\n`);
+          const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+          const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download='exportalink_reporte.csv'; link.click();
+          this.notify('CSV descargado con éxito.');
+        },
+
+        resetDemo(){
+          if(confirm('¿Restaurar datos demo? Se sobrescribirá la información actual.')){
+            localStorage.removeItem('exportalink_enterprise_v7');
+            this.loadDemo();
+            this.notify('Datos demo restaurados.');
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>
